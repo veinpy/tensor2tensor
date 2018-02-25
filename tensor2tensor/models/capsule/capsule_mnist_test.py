@@ -30,13 +30,13 @@ class capsule_mnist_test(tf.test.TestCase):
                 "targets": tf.constant(y, dtype=tf.int32)
             }
             model = CapsNet(hparams, tf.estimator.ModeKeys.TRAIN, p_hparams)
+            import ipdb;ipdb.set_trace()
             logits, _ = model(features)
             session.run(tf.global_variables_initializer())
             res = session.run(logits)
 
     def testCapsuleSmall(self):
-        import ipdb;ipdb.set_trace()
-        self._testCapsule(img_size=9, output_size=None)
+        self._testCapsule(img_size=28, output_size=None)
 
 if __name__ == '__main__':
     tf.test.main()

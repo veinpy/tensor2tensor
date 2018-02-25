@@ -168,6 +168,7 @@ class T2TModel(base.Layer):
         } for loss in sharded_losses])
         losses.update(training_loss_dict)
     else:
+      import ipdb;ipdb.set_trace()
       sharded_logits, sharded_losses = dp(self.model_fn, datashard_to_features)
       losses = average_sharded_losses(sharded_losses)
 

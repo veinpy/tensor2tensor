@@ -115,6 +115,7 @@ class SymbolModality(modality.Modality):
       return ret
 
   def bottom(self, x):
+    import ipdb;ipdb.set_trace()
     self._bottom_was_called = True
     if self._model_hparams.shared_embedding_and_softmax_weights:
       return self.bottom_simple(x, "shared", reuse=None)
