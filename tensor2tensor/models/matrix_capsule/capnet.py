@@ -24,7 +24,7 @@ from tensor2tensor.models.matrix_capsule.utils import *
 
 import tensorflow as tf
 
-@registry.register_model("capsule_img")
+@registry.register_model("capsule")
 class Capsule_Img(t2t_model):
 
     def body(self, features):
@@ -35,7 +35,6 @@ class Capsule_Img(t2t_model):
         targets = features['targets']
 
         hparams = self.hparams
-        netstructure = hparams.netstructure
 
         outputs = inputs
         for params in hparams.capsuleLayerParams:
@@ -46,8 +45,13 @@ class Capsule_Img(t2t_model):
 @registry.register_hparams
 def capsule_img_base():
     hparams = common_hparams.basic_params1()
+
+    layerparams = []
+    layerparams.append({'hidden': 16,'kernel_size':[3,3], "stride":[2],'padding':'VALID', 'scope':'conv_cap1'})
+    layerparams.append({'hidden': 16,'kernel_size':[3,3], "stride":[1],'padding':'VALID', 'scope':'conv_cap1'})
+
     hparams.add_hparams('netstructure', [8, 16, 16]) # mnist
-    hparams.add_hparams("capsuleLayerParams",
+    hparams.add_hparams("capsuleLayerParams", layerIter(layerparams)
                         )
     """
     ...

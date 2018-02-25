@@ -4,16 +4,17 @@
 
 class layerIter(object):
 
-    def __init__(self, layersizes, ):
+    def __init__(self, layerparams):
         self.idx = 0
-        self.n = len(layersizes)
+        self.layerparams = layerparams
+        self.n = len(layerparams)
 
     def __iter__(self):
         return self
 
     def next(self):
         if self.idx < self.n:
-            val = self.idx
+            val = self.layerparams[self.idx]
             self.idx += 1
             return val
         else:

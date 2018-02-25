@@ -13,7 +13,6 @@ class capsuleLayer():
 
     def __init__(self,
                  layer,
-                 name='caplayer',
                  scope=None,
                  **netparams
                  ):
