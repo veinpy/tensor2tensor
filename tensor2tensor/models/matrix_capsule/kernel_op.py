@@ -16,13 +16,35 @@ def capsule_convolution_2d(inputs, **netparams):
     kernel_size = netparams['kernel_size']
     stride = netparams['stride']
     padding = netparams['padding']
+    nchannel_output = netparams['nchannel_output']
+    nchannel_intput = netparams['nchannel_intput']
+
 
     if scope:
         with tf.variable_scope(scope):
             output = kernel_tile(inputs, kernel_size, stride, padding)
+            kernel_tile_shape = output.get_shape()
             # reshape output, split into: pose_tensor and activation_tensor
+            output = tf.reshape(output, shape = [-1, kernel_tile_shape[1]*kernel_tile_shape[2], np.prod(kernel_size)*channel_output, 17])
+            activation = tf.reshape(output[:, :, 16], shape=[
+                                    -1, np.prod(kernel_size)*nchannel_intput, 1])
+
+            with tf.variable_scope('v') as scope:
+                votes = mat_transform(output[:,:,:16], nchannel_output, weights_regularizer, tag=True)
     else:
         pass
+
+def mat_transform(inputs, caps_num_c, regularizer, tag=False):
+    caps_num_i = int(inputs.get_shape()[1])
+    output = tf.reshape(inputs, shape=[-1, caps_num_i, 1, 4 , 4])  # batch_size * (K*K*pre_layer_nchannal_output) * 16
+    # the output of capsule is miu, the mean of a Gaussian, and activation, the sum of probabilities
+    # it has no relationship with the absolute values of w and votes
+    # using weights with bigger stddev helps numerical stability
+    w = tf.get_variable('w', shape = [1, caps_num_i, caps_num_c, 4,4], dtype=tf.float32,
+                        initializer=tf.truncated_normal_initializer(mean=0.0, stddev=1.0),
+                        regularizer=regularizer)
+    w = tf.tile(w, [-1, ])
+    abc
 
 def squash_op(capsules):
     """
@@ -45,7 +67,7 @@ def kernel_tile(inputs,  kernel_size, stride, padding):
     Args:
         inputs: Tensor
         kernel_size:
-        stride:
+        stride:  tuple, length = 4
         padding:
 
     Returns:

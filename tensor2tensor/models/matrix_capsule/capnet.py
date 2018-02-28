@@ -31,12 +31,25 @@ class Capsule_Img(t2t_model):
 
         # after input modality,
         # inputs variable is capsule layer
+        # base capsule's structure:
+        #      4*4 pose matrix,
+        #      1 activation scalar
+        # one standard capsule layer:
+        #      height * weight * (pose + activation)
+        # basic operation for capsule layer:
+        #      convolution
+        #      matrix multiplication
+        #      em_routing
         inputs = features['inputs']
         targets = features['targets']
 
         hparams = self.hparams
 
         outputs = inputs
+
+        # validate nchannel_output[i] == nchannel_input[i+1]
+        abc
+
         for params in hparams.capsuleLayerParams:
             outputs = capsuleLayer(outputs, **params)
 
@@ -47,8 +60,10 @@ def capsule_img_base():
     hparams = common_hparams.basic_params1()
 
     layerparams = []
-    layerparams.append({'hidden': 16,'kernel_size':[3,3], "stride":[2],'padding':'VALID', 'scope':'conv_cap1'})
-    layerparams.append({'hidden': 16,'kernel_size':[3,3], "stride":[1],'padding':'VALID', 'scope':'conv_cap1'})
+    layerparams.append({'hidden': 16,'kernel_size':[3,3], "stride":[2],'padding':'VALID', 'scope':'conv_cap1',
+                        "layertype":'conv', 'nchannel_output': 32, 'nchannel_input':32})
+    layerparams.append({'hidden': 16,'kernel_size':[3,3], "stride":[1],'padding':'VALID', 'scope':'conv_cap1',
+                        "layertype":'conv', 'nchannel_output': 32, 'nchannel_input':32})
 
     hparams.add_hparams('netstructure', [8, 16, 16]) # mnist
     hparams.add_hparams("capsuleLayerParams", layerIter(layerparams)
