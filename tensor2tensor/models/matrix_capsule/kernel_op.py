@@ -11,26 +11,37 @@ import tensorflow as tf
 
 import numpy as np
 
-def capsule_convolution_2d(inputs, **netparams):
+from tensor2tensor.models.matrix_capsule.em_op import EM_op
+
+def capsule_convolution_2d(inputs, hparams, **netparams):
     scope = netparams['scope']
     kernel_size = netparams['kernel_size']
     stride = netparams['stride']
     padding = netparams['padding']
     nchannel_output = netparams['nchannel_output']
     nchannel_intput = netparams['nchannel_intput']
+    EM = EM_op(hparams)
 
+    weights_regularizer = tf.contrib.layers.l2_regularizer(5e-04)
 
     if scope:
         with tf.variable_scope(scope):
             output = kernel_tile(inputs, kernel_size, stride, padding)
             kernel_tile_shape = output.get_shape()
             # reshape output, split into: pose_tensor and activation_tensor
+            # []
             output = tf.reshape(output, shape = [-1, kernel_tile_shape[1]*kernel_tile_shape[2], np.prod(kernel_size)*channel_output, 17])
             activation = tf.reshape(output[:, :, 16], shape=[
                                     -1, np.prod(kernel_size)*nchannel_intput, 1])
 
             with tf.variable_scope('v') as scope:
                 votes = mat_transform(output[:,:,:16], nchannel_output, weights_regularizer, tag=True)
+
+            with tf.variable_scope("routing") as scope:
+                routing_params = {'votes': votes, "activation": activation,
+                                  "nchannel_output": nchannel_output, 'regularizer': weights_regularizer}
+                miu, activation = EM.routing(hparams, **routing_params)
+            pose = tf.reshape(miu, shape=[cfg.batch_size, data_size, data_size, cfg.C, 16])
     else:
         pass
 
@@ -44,7 +55,9 @@ def mat_transform(inputs, caps_num_c, regularizer, tag=False):
                         initializer=tf.truncated_normal_initializer(mean=0.0, stddev=1.0),
                         regularizer=regularizer)
     w = tf.tile(w, [-1, ])
-    abc
+    output = tf.tile(output, [1,1,caps_num_c, 1, 1])
+    votes = tf.reshape(tf.matmul(output, w) , [-1, caps_num_i, caps_num_c,16])
+    return votes
 
 def squash_op(capsules):
     """

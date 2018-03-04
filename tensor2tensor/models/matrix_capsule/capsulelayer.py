@@ -13,6 +13,7 @@ class capsuleLayer():
 
     def __init__(self,
                  layer,
+                 hparams,
                  scope=None,
                  **netparams
                  ):
@@ -37,7 +38,7 @@ class capsuleLayer():
         assert layertype in _NET
         network = _NET[layertype]
 
-        outputs = network(inputs, **netparams)
+        outputs = network(inputs, hparams, **netparams)
 
         self.outputs = outputs
         self.all_layers = list(layer.all_layers)
