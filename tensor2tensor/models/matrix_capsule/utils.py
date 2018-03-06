@@ -12,7 +12,7 @@ class layerIter(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         if self.idx < self.n:
             val = self.layerparams[self.idx]
             self.idx += 1

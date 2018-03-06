@@ -14,12 +14,12 @@ import numpy as np
 from tensor2tensor.models.matrix_capsule.em_op import EM_op
 
 def capsule_convolution_2d(inputs, hparams, **netparams):
-    scope = netparams['scope']
+    scope = netparams['scope'] if "scope" in netparams else None
     kernel_size = netparams['kernel_size']
     stride = netparams['stride']
     padding = netparams['padding']
     nchannel_output = netparams['nchannel_output']
-    nchannel_intput = netparams['nchannel_intput']
+    nchannel_input = netparams['nchannel_input']
     EM = EM_op(hparams)
 
     weights_regularizer = tf.contrib.layers.l2_regularizer(5e-04)
@@ -28,11 +28,13 @@ def capsule_convolution_2d(inputs, hparams, **netparams):
         with tf.variable_scope(scope):
             output = kernel_tile(inputs, kernel_size, stride, padding)
             kernel_tile_shape = output.get_shape()
+            img_size = int(kernel_tile_shape[1])
             # reshape output, split into: pose_tensor and activation_tensor
             # []
-            output = tf.reshape(output, shape = [-1, kernel_tile_shape[1]*kernel_tile_shape[2], np.prod(kernel_size)*channel_output, 17])
+            import ipdb;ipdb.set_trace()
+            output = tf.reshape(output, shape = [-1, kernel_tile_shape[1]*kernel_tile_shape[2], np.prod(kernel_size)*nchannel_output, 17])
             activation = tf.reshape(output[:, :, 16], shape=[
-                                    -1, np.prod(kernel_size)*nchannel_intput, 1])
+                                    -1, np.prod(kernel_size)*nchannel_input, 1])
 
             with tf.variable_scope('v') as scope:
                 votes = mat_transform(output[:,:,:16], nchannel_output, weights_regularizer, tag=True)
@@ -41,9 +43,15 @@ def capsule_convolution_2d(inputs, hparams, **netparams):
                 routing_params = {'votes': votes, "activation": activation,
                                   "nchannel_output": nchannel_output, 'regularizer': weights_regularizer}
                 miu, activation = EM.routing(hparams, **routing_params)
-            pose = tf.reshape(miu, shape=[cfg.batch_size, data_size, data_size, cfg.C, 16])
+            pose = tf.reshape(miu, shape=[-1, img_size, img_size, nchannel_output, 16])
+            activation = tf.reshape(activation, shape=[-1, img_size, img_size, nchannel_output, 1])
+            output =  tf.reshape(tf.concat([pose, activation], axis=4), [
+                                -1, img_size, img_size, nchannel_output*17])
     else:
-        pass
+        tf.logging.info("scope is not defined")
+        raise ValueError()
+
+    return output
 
 def mat_transform(inputs, caps_num_c, regularizer, tag=False):
     caps_num_i = int(inputs.get_shape()[1])
@@ -86,13 +94,17 @@ def kernel_tile(inputs,  kernel_size, stride, padding):
     Returns:
 
     """
+    assert len(stride)==4
     tf.logging.info("kernel_size: {}, strides: {}, padding:{}".format(kernel_size, stride, padding))
     input_shape = inputs.get_shape()
-    tile_filer_shape = kernel_size + [input_shape[3]] + np.prod(kernel_size)
+    tile_filer_shape = kernel_size + [int(input_shape[3])] + [np.prod(kernel_size)]
     tile_filter = np.zeros(tile_filer_shape, dtype=np.float32)
     for i in range(kernel_size[0]):
         for j in range(kernel_size[1]):
             tile_filter[i,j,:,i*kernel_size[1]+j] = 1.
+
+    import ipdb;ipdb.set_trace()
+    tf.logging.info("tile_filter shape: {}".format(tile_filter.shape))
 
     tile_filter_op = tf.constant(tile_filter, dtype=tf.float32)
     output = tf.nn.depthwise_conv2d(inputs, tile_filter_op, strides=stride, padding=padding)

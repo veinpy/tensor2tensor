@@ -2,6 +2,7 @@
 # __author__=veinpy
 
 from tensor2tensor.models.matrix_capsule.kernel_op import *
+from tensor2tensor.models.matrix_capsule.Layer import Layer
 
 _NET = {'conv': capsule_convolution_2d}
 
@@ -14,11 +15,9 @@ class capsuleLayer():
     def __init__(self,
                  layer,
                  hparams,
-                 scope=None,
                  **netparams
                  ):
         """
-
         Args:
             layer:
             layersize:
@@ -26,11 +25,8 @@ class capsuleLayer():
             strid:
             padding:
             name:
-            scope:
             layertype: 'conv', 'rnn', '..'
-
         Returns:
-
         """
         inputs = layer.outputs
 
@@ -55,3 +51,13 @@ class capsuleLayer():
 
     def loss(self):
         pass
+
+
+class PrimaryCapLayer(Layer):
+    """
+    Primary Capsule Layer
+    implement Matrix Capsule, which contains  Pose and activation
+    """
+    def __init__(self, inputs=None, name="primaryCap"):
+        Layer.__init__(self, inputs=inputs,name=name)
+        # perform PrimaryCap Operation

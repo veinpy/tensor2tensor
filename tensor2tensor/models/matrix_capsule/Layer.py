@@ -101,3 +101,22 @@ class Layer(object):
         # self.print_params(False)
         # self.print_layers()
         return "  Last layer is: %s" % self.__class__.__name
+
+class InputLayer(Layer):
+    """
+    The :class:`InputLayer` class is the starting layer of a neural network.
+    Parameters
+    ----------
+    inputs : placeholder or tensor
+        The input of a network.
+    name : str
+        A unique layer name.
+    """
+
+    def __init__(self, inputs=None, name='input'):
+        Layer.__init__(self, inputs=inputs, name=name)
+        logging.info("InputLayer  %s: %s" % (self.name, inputs.get_shape()))
+        self.outputs = inputs
+        self.all_layers = []
+        self.all_params = []
+        self.all_drop = {}
