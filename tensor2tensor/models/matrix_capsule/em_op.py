@@ -33,10 +33,10 @@ class EM_op():
         activation_out = iter_params["activation_out"]
 
         if iters ==0 :
-            tmptensor = tf.ones_like(activation_in[:,:,0])
+            tmptensor = tf.ones_like(activation_in[:,:,0],dtype=tf.float32)
             tmptensor = tf.expand_dims(tmptensor, -1)
             tmptensor = tf.tile(tmptensor, [1,1, nchannel_output])
-            r = tf.constant(np.ones(tmptensor), dtype=tf.float32) / nchannel_output
+            r = tmptensor / nchannel_output
 
         else:
             # Contributor: Yunzhi Shi
@@ -83,7 +83,11 @@ class EM_op():
         else:
             activation_out = tf.nn.softmax(r_sum)
 
-        return miu, activation_out
+        iter_params.update({"miu": miu})
+        iter_params.update({"sigma_square": sigma_square})
+        iter_params.update({"activation_out": activation_out})
+
+        return miu, activation_out, iter_params
 
     def routing(self, hparams,**params):
         # for now, routing is based on exists algorithm
@@ -131,7 +135,8 @@ class EM_op():
         routing_params.update({"votes_in":votes_in})
         routing_params.update({"activation_in":activation_in})
         routing_params.update({"nchannel_output": nchannel_output})
-
+        routing_params.update({"iter_routing": iter_routing})
+        import ipdb;ipdb.set_trace()
         for iters in range(iter_routing):
             routing_params.update({"iters": iters})
             # e_step
@@ -139,5 +144,5 @@ class EM_op():
             routing_params.update({'r': r})
 
             # m_step
-            miu, activation_out = self.M_op(hparams, **routing_params)
+            miu, activation_out, routing_params = self.M_op(hparams, **routing_params)
         return miu, activation_out

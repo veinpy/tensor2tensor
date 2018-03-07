@@ -22,17 +22,14 @@ class mcapsule_test(tf.test.TestCase):
         image = np.random.random_integers(
             0, high=255, size=img_shape)
         label = np.random.randint(0,9,size= [img_shape[0],1,1,1])
-
         with self.test_session() as session:
             features = {
                 "inputs": tf.constant(image, dtype=tf.float32),
                 "targets": tf.constant(label,dtype=tf.int32)
             }
             model = capnet.Capsule_Img(hparams, tf.estimator.ModeKeys.TRAIN, p_hparams)
-            import ipdb;ipdb.set_trace()
             logits, _ = model(features)
             session.run(tf.global_variables_initializer())
-            import ipdb;ipdb.set_trace()
             losses = session.run(logits)
 
 

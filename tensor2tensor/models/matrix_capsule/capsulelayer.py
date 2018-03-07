@@ -4,7 +4,7 @@
 from tensor2tensor.models.matrix_capsule.kernel_op import *
 from tensor2tensor.models.matrix_capsule.Layer import Layer
 
-_NET = {'conv': capsule_convolution_2d}
+_NET = {'conv': capsule_convolution_2d, 'convPrimary':capsule_convolution_2d_primary}
 
 class capsuleLayer():
     """
@@ -37,8 +37,8 @@ class capsuleLayer():
         outputs = network(inputs, hparams, **netparams)
 
         self.outputs = outputs
-        self.all_layers = list(layer.all_layers)
-        self.all_layers.extend(self.outputs)
+        #self.all_layers = list(layer.all_layers)
+        #self.all_layers.extend(self.outputs)
 
         """
         self.all_params = list(layer.all_params)
@@ -58,6 +58,10 @@ class PrimaryCapLayer(Layer):
     Primary Capsule Layer
     implement Matrix Capsule, which contains  Pose and activation
     """
-    def __init__(self, inputs=None, name="primaryCap"):
-        Layer.__init__(self, inputs=inputs,name=name)
-        # perform PrimaryCap Operation
+    def __init__(self, inputs=None, name='input'):
+        Layer.__init__(self, inputs=inputs, name=name)
+        tf.logging.info("InputLayer  %s: %s" % (self.name, inputs.get_shape()))
+        self.outputs = inputs
+        self.all_layers = []
+        self.all_params = []
+        self.all_drop = {}

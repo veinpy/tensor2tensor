@@ -29,7 +29,6 @@ import tensorflow as tf
 class Capsule_Img(t2t_model.T2TModel):
 
     def body(self, features):
-        import ipdb;ipdb.set_trace()
         # after input modality,
         # inputs variable is capsule layer
         # base capsule's structure:
@@ -48,7 +47,7 @@ class Capsule_Img(t2t_model.T2TModel):
 
         #outputs = Layer(inputs,name="inputs")
         outputs = InputLayer(inputs)
-        outputs = PrimaryCapLayer(inputs)
+        #outputs = PrimaryCapLayer(inputs)
 
         # validate nchannel_output[i] == nchannel_input[i+1]
         for params in hparams.capsuleLayerParams:
@@ -63,9 +62,13 @@ def capsule_img_base():
     hparams.add_hparam("epsilon", 1e-9)
     hparams.add_hparam("ac_lambda0", 0.01)
     layerparams = []
-    layerparams.append({'hidden': 16,'kernel_size':[3,3], "stride":[1,2,2,1],'padding':'VALID','scope':'conv_cap1',
-                        "layertype":'conv', 'nchannel_output': 32, 'nchannel_input':32, "iter_routing":10})
-    layerparams.append({'hidden': 16,'kernel_size':[3,3], "stride":[1,1,1,1],'padding':'VALID','scope':'conv_cap1',
+    layerparams.append({"kernel_size":[1,1], "stride":[1,1,1,1],"padding":"VALID","scope":"conv_primary",
+                        "layertype":"convPrimary","nchannel_output":8, "nchannel_input":None,"iter_routing":None})
+
+    layerparams.append({'kernel_size':[3,3], "stride":[1,2,2,1],'padding':'VALID','scope':'conv_cap1',
+                        "layertype":'conv', 'nchannel_output': 32, 'nchannel_input':8, "iter_routing":10})
+    
+    layerparams.append({'kernel_size':[3,3], "stride":[1,1,1,1],'padding':'VALID','scope':'conv_cap2',
                         "layertype":'conv', 'nchannel_output': 32, 'nchannel_input':32, "iter_routing":10})
 
     hparams.add_hparam('netstructure', [8, 16, 16]) # mnist
