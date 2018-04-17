@@ -53,7 +53,10 @@ class Capsule_Img(t2t_model.T2TModel):
         for params in hparams.capsuleLayerParams:
             outputs = capsuleLayer(outputs, hparams, **params)
 
-
+        # reformat the output layer into output and extra_losses
+        result = outputs.outputs
+        extra_info = outputs.extra
+        return result
 
 @registry.register_hparams
 def capsule_img_base():
@@ -67,9 +70,12 @@ def capsule_img_base():
 
     layerparams.append({'kernel_size':[3,3], "stride":[1,2,2,1],'padding':'VALID','scope':'conv_cap1',
                         "layertype":'conv', 'nchannel_output': 32, 'nchannel_input':8, "iter_routing":10})
-    
+
     layerparams.append({'kernel_size':[3,3], "stride":[1,1,1,1],'padding':'VALID','scope':'conv_cap2',
                         "layertype":'conv', 'nchannel_output': 32, 'nchannel_input':32, "iter_routing":10})
+
+    layerparams.append({"scope":'output', "layertype":"classOutput", "iter_routing":10,
+                        "nchannel_input":32, "nclasses":10})
 
     hparams.add_hparam('netstructure', [8, 16, 16]) # mnist
     hparams.add_hparam("capsuleLayerParams", layerIter(layerparams)

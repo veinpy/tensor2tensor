@@ -168,7 +168,6 @@ class T2TModel(base.Layer):
         } for loss in sharded_losses])
         losses.update(training_loss_dict)
     else:
-      import ipdb;ipdb.set_trace()
       sharded_logits, sharded_losses = dp(self.model_fn, datashard_to_features)
       losses = average_sharded_losses(sharded_losses)
 
@@ -187,6 +186,7 @@ class T2TModel(base.Layer):
     return sharded_logits, losses
 
   def model_fn(self, features):
+    import ipdb;ipdb.set_trace()
     transformed_features = self.bottom(features)
 
     with tf.variable_scope("body"):
@@ -261,6 +261,7 @@ class T2TModel(base.Layer):
           target_modality.top_is_pointwise and
           self.hparams.mode == tf.estimator.ModeKeys.PREDICT and
           not self.hparams.force_full_predict)
+      import ipdb;ipdb.set_trace()
       if not last_only:
         logits = target_modality.top(body_output, features["targets"])
       else:

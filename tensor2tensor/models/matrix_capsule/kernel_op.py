@@ -33,7 +33,6 @@ def capsule_convolution_2d(inputs, hparams, **netparams):
             img_size1 = int(kernel_tile_shape[2])
             # reshape output, split into: pose_tensor and activation_tensor
             # []
-            import ipdb;ipdb.set_trace()
             output = tf.reshape(output, shape = [-1, np.prod(kernel_size)*nchannel_input, 17])
             activation = tf.reshape(output[:, :, 16], shape=[
                                     -1, np.prod(kernel_size)*nchannel_input, 1])
@@ -54,7 +53,7 @@ def capsule_convolution_2d(inputs, hparams, **netparams):
         tf.logging.info("scope is not defined")
         raise ValueError()
 
-    return output
+    return output, None
 
 def capsule_convolution_2d_primary(inputs, hparams, **netparams):
     """
@@ -88,7 +87,7 @@ def capsule_convolution_2d_primary(inputs, hparams, **netparams):
     output = tf.concat([pose,activation],axis=4)
     output = tf.reshape(output, shape=[-1, img_size0, img_size1, nchannel_output*17])
     tf.logging.info("primary capsule output shape: {}".format(output.get_shape))
-    return output
+    return output, None
 
 def mat_transform(inputs, caps_num_c, regularizer, tag=False):
     caps_num_i = int(inputs.get_shape()[1])
@@ -104,6 +103,59 @@ def mat_transform(inputs, caps_num_c, regularizer, tag=False):
     output = tf.tile(output, [1,1,caps_num_c, 1, 1])
     votes = tf.reshape(tf.matmul(output, w) , [-1, caps_num_i, caps_num_c,16])
     return votes
+
+
+def classOutput(inputs, hparams,**netparams):
+    """
+    Capsules who represent classes, for classification task
+    当前class捆绑于matrix capsule模型， 包括pose, activation
+
+    layer.outputs: tf.reshape(tf.concat([pose, activation], axis=4),
+                        [-1, img_size0, img_size1, nchannel_output*17])
+    """
+    weights_regularizer = tf.contrib.layers.l2_regularizer(5e-04)
+    scope = netparams['scope'] if "scope" in netparams else None
+    nchannel_input = netparams['nchannel_input']
+    iter_routing = netparams["iter_routing"]
+    nclasses = netparams['nclasses']
+    EM = EM_op(hparams)
+
+    # construct class layer
+    inputs_shape = inputs.get_shape()
+    pose = tf.reshape(inputs[:,:,:,:16*nchannel_input], shape=[np.prod(inputs_shape[:3].as_list())] + [nchannel_input, 16])
+    activation = tf.reshape(inputs[:,:,:,16*nchannel_input:], shape=[np.prod(inputs_shape[:3].as_list())] + [nchannel_input, 1])
+
+    votes = mat_transform(pose, nclasses, weights_regularizer)
+
+    tf.logging.info("votes for classification layer: {}".format(votes.get_shape()))
+    """
+    not clear, so try not include it
+    coord_add =
+    """
+    routing_params = {'votes': votes, "activation": activation,
+                              "nchannel_output": nclasses, 'regularizer': weights_regularizer,
+                              "iter_routing":iter_routing}
+
+    with tf.variable_scope(scope) as scope:
+        miu, activation = EM.routing(hparams, **routing_params)
+    #output = tf.reshape(activation, shape=[
+    #                        cfg.batch_size, data_size, data_size, num_classes])
+    import ipdb;ipdb.set_trace()
+    output = tf.reshape(activation, shape =inputs_shape[:3].as_list()+[nclasses])
+    img_size0 = int(inputs_shape[1])
+    img_size1 = int(inputs_shape[2])
+    batchsize = int(inputs_shape[0])
+    output = tf.reshape(tf.nn.avg_pool(output,
+                ksize=[1, img_size0, img_size1, 1], strides=[1, 1, 1, 1], padding='VALID'), shape=[-1, nclasses])
+    pose = tf.nn.avg_pool(tf.reshape(miu, shape=[batchsize, img_size0, img_size1, -1]), ksize=[
+                              1, img_size0, img_size1, 1], strides=[1, 1, 1, 1], padding='VALID')
+    pose_out = tf.reshape(pose, shape=[batchsize, nclasses, 16])  #if coord_add: shape=[batchsize, nclasses, 18]
+    netparams.update({"pose_out": pose_out})
+    netparams.update({"pose":pose})
+    extra_info = {}
+    extra_info.update({"pose_out": pose_out})
+    extra_info.update({"pose":pose})
+    return output, extra_info
 
 def squash_op(capsules):
     """

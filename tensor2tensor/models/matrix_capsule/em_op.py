@@ -136,7 +136,6 @@ class EM_op():
         routing_params.update({"activation_in":activation_in})
         routing_params.update({"nchannel_output": nchannel_output})
         routing_params.update({"iter_routing": iter_routing})
-        import ipdb;ipdb.set_trace()
         for iters in range(iter_routing):
             routing_params.update({"iters": iters})
             # e_step

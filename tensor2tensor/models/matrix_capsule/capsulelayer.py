@@ -4,7 +4,14 @@
 from tensor2tensor.models.matrix_capsule.kernel_op import *
 from tensor2tensor.models.matrix_capsule.Layer import Layer
 
-_NET = {'conv': capsule_convolution_2d, 'convPrimary':capsule_convolution_2d_primary}
+"""
+eacg layer in _NET return:
+        output, extra_info
+        >> extra_info: dict
+        >> output: Tensor
+"""
+_NET = {'conv': capsule_convolution_2d, 'convPrimary':capsule_convolution_2d_primary,
+        'classOutput': classOutput}
 
 class capsuleLayer():
     """
@@ -29,14 +36,16 @@ class capsuleLayer():
         Returns:
         """
         inputs = layer.outputs
-
+        self.netparams = netparams
+        self.hparams = hparams
         layertype = netparams['layertype']
         assert layertype in _NET
         network = _NET[layertype]
 
-        outputs = network(inputs, hparams, **netparams)
+        outputs,extra = network(inputs, hparams, **netparams)
 
         self.outputs = outputs
+        self.extra = extra
         #self.all_layers = list(layer.all_layers)
         #self.all_layers.extend(self.outputs)
 
@@ -65,3 +74,5 @@ class PrimaryCapLayer(Layer):
         self.all_layers = []
         self.all_params = []
         self.all_drop = {}
+
+
